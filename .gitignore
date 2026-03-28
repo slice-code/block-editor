@@ -1,0 +1,55 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Composer
+/vendor/
+composer.lock
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# PHP
+*.log
+*.cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+database.db
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+
+# Uploads (optional - uncomment if you don't want to track uploads)
+# storage/uploads/*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Sensitive files
+*.pem
+*.key
+*.crt
+*.zip
+# Admin panel specific
+admin/arms_cache/
