@@ -82,12 +82,12 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     import('./lib/youtube-embed.js'),
     import('./lib/block-quote.js'),
     import('./lib/divider.js'),
-    import('./lib/codepen-embed.js'),
     import('./lib/drag-drop.min.js'),
     import('./lib/cta-block.js'),
     import('./lib/group-button-block.js'),
     import('./lib/table-block.js'),
-    import('./lib/embed-block.js')
+    import('./lib/embed-block.js'),
+    import('./lib/raw-html-block.js')
   ]);
   
   const EditorJS = window.EditorJS;
@@ -98,11 +98,11 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
   const YouTubeEmbed = window.YouTubeEmbed;
   const BlockQuote = window.BlockQuote;
   const Divider = window.Divider;
-  const CodePenEmbed = window.CodePenEmbed;
   const CTABlock = window.CTABlock;
   const GroupButtonBlock = window.GroupButtonBlock;
   const TableBlock = window.TableBlock;
   const EmbedBlock = window.EmbedBlock;
+  const RawHtmlBlock = window.RawHtmlBlock;
 
   const idEditor = 'el-editor-' + generateUUID();
 
@@ -1021,9 +1021,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           divider: {
             class: Divider
           },
-          codepen: {
-            class: CodePenEmbed
-          },
           cta: {
             class: CTABlock
           },
@@ -1035,6 +1032,9 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           },
           embed: {
             class: EmbedBlock
+          },
+          rawHtml: {
+            class: RawHtmlBlock
           }
         },
         onReady: async () => {
