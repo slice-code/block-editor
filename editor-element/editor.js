@@ -468,10 +468,19 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     }
   };
   
+  const mobileExportButton = el('button')
+    .html('<i class="fas fa-download"></i>')
+    .class('lg:hidden px-3 py-2 rounded bg-gray-700 text-white text-sm')
+    .attr('title', 'Export')
+    .on('click', () => {
+      openExportModal();
+    });
+
   const editorToolbar = el('div')
-    .class('flex items-center gap-2 p-2 border-b bg-white')
+    .class('flex flex-wrap items-center justify-between gap-2 p-2 border-b bg-white')
     .child([
-      el('div').class('flex-1 flex items-center gap-2').child([
+      el('div').class('flex flex-wrap items-center gap-2').child([
+        el('div').class('lg:hidden text-sm font-semibold').text('Editor'),
         el('button')
           .class('px-3 py-1 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed')
           .attr('title', 'Undo (Ctrl+Z)')
@@ -495,7 +504,17 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
             }
           }),
       ]),
-      el('div').class('text-xs text-gray-400').link(connection, 'autoSaveIndicator'),
+      el('div').class('flex items-center gap-2').child([
+        mobileExportButton,
+        el('button')
+          .class('lg:hidden px-3 py-2 rounded bg-black text-white text-sm')
+          .text('Next')
+          .on('click', () => {
+            editorPanel.el.style.display = 'none';
+            sidebarPanel.el.style.display = 'block';
+          }),
+        el('span').class('text-xs text-gray-400').link(connection, 'autoSaveIndicator'),
+      ]),
     ]);
 
   // Function to update undo/redo button states
@@ -527,46 +546,36 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     }
   }
 
+  const saveNewsletter = async () => {
+    const content = await connection.ej.save();
+    const editorValues = getEditorDataValues();
+    console.log('💾 Saving:', editorValues.title || 'Untitled', '- blocks:', content.blocks?.length || 0);
+    const newsletterData = {
+      title: editorValues.title,
+      status: editorValues.status,
+      author: editorValues.author,
+      category: editorValues.category,
+      metaDescription: editorValues.metaDescription,
+      tags: editorValues.tags,
+      slug: editorValues.slug,
+      featuredImage: editorValues.featuredImage,
+      featuredImageAlt: editorValues.featuredImageAlt,
+      publishDate: editorValues.publishDate,
+      publishTime: editorValues.publishTime,
+      content: content
+    };
+    clearAutoSave();
+    if (onSave && typeof onSave === 'function') {
+      onSave(newsletterData);
+    } else {
+      console.log('Newsletter data:', newsletterData);
+    }
+  };
+
   const saveButton = el('button')
     .text('Save')
     .class('px-2 py-[4px] rounded-sm cursor-pointer bg-black text-white')
-    .on('click', async () => {
-      const content = await connection.ej.save();
-      
-      // Get actual values from editorData (not DOM elements)
-      const editorValues = getEditorDataValues();
-      console.log('💾 Saving:', editorValues.title || 'Untitled', '- blocks:', content.blocks?.length || 0);
-      
-      const newsletterData = {
-        // Metadata
-        title: editorValues.title,
-        status: editorValues.status,
-        author: editorValues.author,
-        category: editorValues.category,
-        // SEO
-        metaDescription: editorValues.metaDescription,
-        tags: editorValues.tags,
-        slug: editorValues.slug,
-        // Featured Image
-        featuredImage: editorValues.featuredImage,
-        featuredImageAlt: editorValues.featuredImageAlt,
-        // Publish
-        publishDate: editorValues.publishDate,
-        publishTime: editorValues.publishTime,
-        // Content
-        content: content
-      };
-      
-      // PHASE 1.2: Clear autosave on manual save
-      clearAutoSave();
-      
-      // Call onSave callback if provided
-      if (onSave && typeof onSave === 'function') {
-        onSave(newsletterData);
-      } else {
-        console.log('Newsletter data:', newsletterData);
-      }
-    });
+    .on('click', saveNewsletter);
   
   // ============================================
   // PHASE 3.2: EXPORT BUTTON
@@ -600,7 +609,7 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     });
 
   const containerButton = el('div')
-    .class('p-2 shadow-md z-10 flex h-[50px] items-center')
+    .class('hidden lg:flex p-2 shadow-md z-10 flex-col sm:flex-row h-auto sm:h-[50px] items-start sm:items-center justify-between gap-2')
     .borderBottom('1px solid #ccc')
     .child([
       el('div').class('text-lg flex-1').text("Newsletter"),
@@ -679,7 +688,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     // SEO Section
     el('div').class('border-b pb-3').child([
       el('div').class('text-xs font-semibold text-gray-400 uppercase mb-2').text('SEO'),
-      // PHASE 3.3: SEO Score Display
       el('div').class('mb-3 p-3 bg-gray-50 rounded').child([
         el('div').class('flex items-center justify-between mb-2').child([
           el('span').class('text-xs font-medium text-gray-600').text('SEO Score'),
@@ -694,11 +702,8 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           .on('click', async () => {
             if (!connection.ej) return;
             const content = await connection.ej.save();
-            // Extract actual values from editorData (which may contain DOM elements)
             const editorValues = getEditorDataValues();
             const score = calculateSEOScore(editorValues, content);
-            
-            // Update display
             if (connection.seoScoreDisplay) {
               connection.seoScoreDisplay.textContent = `${score.score}/100`;
               connection.seoScoreDisplay.className = `text-lg font-bold ${score.score >= 70 ? 'text-green-600' : score.score >= 40 ? 'text-yellow-600' : 'text-red-600'}`;
@@ -707,8 +712,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
               connection.seoScoreBar.style.width = `${score.score}%`;
               connection.seoScoreBar.className = `h-2 rounded-full transition-all ${score.score >= 70 ? 'bg-green-500' : score.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`;
             }
-            
-            // Show recommendations
             if (score.recommendations.length > 0) {
               alert('SEO Recommendations:\n\n' + score.recommendations.join('\n'));
             } else {
@@ -724,7 +727,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     // Featured Image Section
     el('div').class('border-b pb-3').child([
       el('div').class('text-xs font-semibold text-gray-400 uppercase mb-2').text('Featured Image'),
-      // Hidden file input
       el('input')
         .type('file')
         .attr('accept', 'image/*')
@@ -733,31 +735,22 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
         .on('change', async (e) => {
           const file = e.target.files[0];
           if (file) {
-            // Show loader
             const previewContainer = document.getElementById('featured-image-preview');
             if (previewContainer) {
               previewContainer.innerHTML = '<div class="text-gray-500 text-sm">Uploading...</div>';
             }
-            
             try {
-              // Upload file to server
               const formData = new FormData();
               formData.append('image', file);
-              
               const response = await fetch('/admin/api/upload/featured-image', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include'
               });
-              
               const result = await response.json();
-              
               if (result.status === 'success' && result.data && result.data.path) {
-                // Store the file path (not base64)
                 editorData.featuredImage = result.data.path;
                 hasUnsavedChanges = true;
-                
-                // Update preview with uploaded image URL
                 const imageUrl = '/storage/uploads/posts/' + result.data.filename;
                 window.updateFeaturedImagePreview(imageUrl);
               } else {
@@ -766,14 +759,12 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
             } catch (error) {
               console.error('Upload error:', error);
               alert('Failed to upload image: ' + error.message);
-              // Reset to placeholder on error
               if (previewContainer) {
                 previewContainer.innerHTML = '<div class="text-gray-400 text-sm upload-placeholder">Click to upload image</div>';
               }
             }
           }
         }),
-      // Upload area / Preview container
       el('div')
         .id('featured-image-preview')
         .class('border-2 border-dashed border-gray-300 rounded p-4 text-center cursor-pointer hover:border-gray-400 transition-colors relative')
@@ -781,7 +772,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           el('div').class('text-gray-400 text-sm upload-placeholder').text('Click to upload image'),
         ])
         .on('click', (e) => {
-          // Don't trigger upload if clicking on delete button
           if (e.target.closest('.delete-featured-image')) return;
           if (editorData.featuredImageInput) {
             editorData.featuredImageInput.click();
@@ -790,26 +780,17 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
       inputField('Image Alt Text', 'featuredImageAlt', 'Describe image...'),
     ]),
 
-    // Helper function to update featured image preview
-    window.updateFeaturedImagePreview = function(imageSrc) {
+    (window.updateFeaturedImagePreview = function(imageSrc) {
       const previewContainer = document.getElementById('featured-image-preview');
       if (!previewContainer) return;
-      
       if (imageSrc) {
-        // Show image with delete button
         previewContainer.innerHTML = '';
-        
-        // Create image wrapper
         const imgWrapper = document.createElement('div');
         imgWrapper.className = 'relative inline-block';
-        
-        // Create image
         const img = document.createElement('img');
         img.src = imageSrc;
         img.style.cssText = 'max-width: 100%; max-height: 150px; border-radius: 4px; object-fit: cover;';
         imgWrapper.appendChild(img);
-        
-        // Create delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-featured-image absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors flex items-center justify-center text-sm font-bold shadow-md';
         deleteBtn.innerHTML = '×';
@@ -820,7 +801,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           if (editorData.featuredImageInput) {
             editorData.featuredImageInput.value = '';
           }
-          // Reset to upload placeholder
           previewContainer.innerHTML = '';
           const placeholder = document.createElement('div');
           placeholder.className = 'text-gray-400 text-sm upload-placeholder';
@@ -829,19 +809,16 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           hasUnsavedChanges = true;
         };
         imgWrapper.appendChild(deleteBtn);
-        
         previewContainer.appendChild(imgWrapper);
       } else {
-        // Reset to upload placeholder
         previewContainer.innerHTML = '';
         const placeholder = document.createElement('div');
         placeholder.className = 'text-gray-400 text-sm upload-placeholder';
         placeholder.textContent = 'Click to upload image';
         previewContainer.appendChild(placeholder);
       }
-    },
+    }),
 
-    // Publish Settings
     el('div').class('pb-3').child([
       el('div').class('text-xs font-semibold text-gray-400 uppercase mb-2').text('Publish'),
       el('div').class('space-y-3 mb-3').child([
@@ -859,10 +836,7 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
         ]),
       ]),
     ]),
-    
-    // ============================================
-    // PHASE 1.3: WORD COUNT & READING TIME
-    // ============================================
+
     el('div').class('border-t pt-3 mt-3').child([
       el('div').class('text-xs font-semibold text-gray-400 uppercase mb-2').text('Content Stats'),
       el('div')
@@ -873,8 +847,6 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           try {
             if (!connection.ej) return;
             const content = await connection.ej.save();
-            
-            // Extract all text from blocks
             const allText = content.blocks
               .map(block => {
                 if (block.data.text) return block.data.text;
@@ -883,14 +855,10 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
                 return '';
               })
               .join(' ');
-            
-            // Count words (strip HTML tags first)
             const plainText = allText.replace(/<[^>]*>/g, '');
             const words = plainText.trim().split(/\s+/).filter(w => w.length > 0).length;
-            const readTime = Math.max(1, Math.ceil(words / 200)); // 200 words per minute
+            const readTime = Math.max(1, Math.ceil(words / 200));
             const charCount = plainText.length;
-            
-            // element is a raw DOM element, use textContent not .text()
             element.textContent = `${words.toLocaleString()} words • ${readTime} min read • ${charCount.toLocaleString()} chars`;
           } catch (error) {
             element.textContent = '0 words • 0 min read';
@@ -898,7 +866,85 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
         }, 2000),
     ]),
   ]);
-  
+
+  // Mobile view controls
+  const editorPanel = el('div')
+    .class('flex-1 flex flex-col bg-gray-200 overflow-auto min-h-screen max-h-[100dvh]')
+    .child([
+      // PHASE 1.1: Editor Toolbar
+      editorToolbar,
+      el('div')
+      .class('flex-1 p-[20px] overflow-auto')
+      .child([
+        el('div')
+          .class('shadow-md mx-auto min-h-[calc(100dvh-120px)] px-[40px] py-[20px] w-full max-w-[768px] bg-white rounded-md')
+          .child([
+            el('div').class("flex justify-center").child([
+              el('input')
+                .css({
+                  outline: 'none',
+                })
+                .link(editorData, 'title')
+                .hold('Type title here...')
+                .class('mx-auto mb-2 w-full max-w-[650px] text-2xl')
+                .on('input', () => { hasUnsavedChanges = true; }),
+            ]),
+            el('div')
+              .link(connection, editor)
+              .id(idEditor),
+          ]),
+      ]),
+    ]);
+
+  const sidebarPanel = el('div')
+    .class('hidden lg:block shadow-md w-full lg:w-[360px] overflow-auto min-h-screen max-h-[100dvh] bg-white')
+    .child([
+      el('div')
+        .class('lg:hidden flex items-center justify-between gap-2 p-3 border-b bg-white')
+        .child([
+          el('button')
+            .class('px-3 py-2 rounded bg-gray-900 text-white text-sm')
+            .text('Back')
+            .on('click', () => {
+              sidebarPanel.el.style.display = 'none';
+              editorPanel.el.style.display = 'block';
+            }),
+          el('button')
+            .class('px-3 py-2 rounded bg-black text-white text-sm')
+            .text('Save')
+            .on('click', saveNewsletter)
+        ]),
+      containerButton,
+      el('div').class('max-h-[calc(100dvh-50px)] overflow-auto').child([
+        sidebarContent
+      ])
+    ]);
+
+  const showDesktopPanels = () => {
+    editorPanel.el.style.display = 'flex';
+    sidebarPanel.el.style.display = 'block';
+  };
+
+  const showMobileEditor = () => {
+    editorPanel.el.style.display = 'flex';
+    sidebarPanel.el.style.display = 'none';
+  };
+
+  const showMobileSidebar = () => {
+    editorPanel.el.style.display = 'none';
+    sidebarPanel.el.style.display = 'block';
+  };
+
+  const handleResize = () => {
+    if (window.innerWidth >= 1024) {
+      showDesktopPanels();
+    } else {
+      showMobileEditor();
+    }
+  };
+
+  window.addEventListener('resize', handleResize);
+
   // Create container for Editor.js
   const editorContainer = el('div')
     .child([
@@ -912,44 +958,12 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
           width : 100%;
         }
       `),
-      el('div')
-      .class('flex-1 flex flex-col bg-gray-200 overflow-auto max-h-[100vh] min-h-[100vh]')
-      .child([
-        // PHASE 1.1: Editor Toolbar
-        editorToolbar,
-        el('div')
-        .class('flex-1 p-[20px] overflow-auto')
-        .child([
-          el('div')
-          .class('shadow-md mx-auto min-h-[calc(100vh-120px)] px-[40px] py-[20px] w-full max-w-[768px] bg-white rounded-md')
-          .child([
-            el('div').class("flex justify-center").child([
-              el('input')
-              .css({
-                outline: 'none',
-              })
-              .link(editorData, 'title')
-              .hold('Type title here...')
-              .class('mx-auto mb-2 w-full max-w-[650px] text-2xl')
-              .on('input', () => { hasUnsavedChanges = true; }),
-            ]),
-            el('div')
-              .link(connection, editor)
-              .id(idEditor),
-          ]),
-        ]),
-      ]),
-      el('div')
-      .class('shadow-md w-[360px] overflow-auto max-h-[100vh] min-h-[100vh] bg-white')
-      .child([
-        containerButton,
-        el('div').class('max-h-[calc(100vh-50px)] overflow-auto').child([
-          sidebarContent
-        ])
-      ]),
+      editorPanel,
+      sidebarPanel,
     ])
-    .class('flex')
+    .class('flex flex-col lg:flex-row')
     .load(async ()=>{
+      handleResize();
       // Initialize datepicker and timepicker first (they are async)
       if (editorData.datePickerContainer) {
         const dp = await datepicker({
@@ -1403,13 +1417,13 @@ const editor = async ({el, onClose, onSave, categories = [], type = 'newsletter'
     modal.style.cssText = 'font-family: system-ui, -apple-system, sans-serif; background: rgba(0, 0, 0, 0.2);';
     
     modal.innerHTML = `
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80dvh] overflow-hidden">
         <div class="p-4 border-b flex justify-between items-center">
           <h2 class="text-xl font-semibold">Recover Draft</h2>
           <button class="text-gray-500 hover:text-gray-700 text-2xl modal-close">&times;</button>
         </div>
         
-        <div class="p-4 overflow-auto max-h-[60vh]">
+        <div class="p-4 overflow-auto max-h-[60dvh]">
           ${drafts.length > 0 ? `
             <table class="w-full">
               <thead>

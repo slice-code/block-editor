@@ -17,6 +17,7 @@ A Ghost-like block-based content editor built with **Editor.js** for creating ri
 - **Slash Menu**: Type `/` to access all available blocks
 - **Drag & Drop**: Reorder content blocks effortlessly
 - **Inline Toolbar**: Format text without leaving your flow
+- **Mobile-First Layout**: Editor view loads first on mobile, with `Next` / `Back` flow to newsletter details and mobile export support
 
 ### 🧱 Available Block Types
 
@@ -142,6 +143,8 @@ class App {
 
 export default App;
 ```
+
+> Mobile note: the editor includes a mobile-first flow where the editor is shown first, then newsletter details are shown after tapping `Next`. It also uses `dvh` units for more stable viewport sizing on mobile browsers.
 
 ### Configuration Parameters Explained
 
