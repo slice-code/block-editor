@@ -3,6 +3,10 @@
 A Ghost-like block-based content editor built with **Editor.js** for creating rich newsletter content with metadata management, SEO tools, and publication scheduling.
 
 <p align="center">
+  <img src="./Screenshot_2026-04-08_11-33-40.png" alt="Block Editor Screenshot" />
+</p>
+
+<p align="center">
   <a href="https://ko-fi.com/gugusdarmayanto">
     <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" />
   </a>
