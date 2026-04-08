@@ -3,7 +3,7 @@
 A Ghost-inspired block-based content editor built with **Editor.js** for creating rich newsletter content with metadata management, SEO tools, and publication scheduling.
 
 <p align="center">
-  <img src="./Screenshot_2026-04-08_11-33-40.png" alt="Block Editor Screenshot" />
+  <img src="./editor-element/block-editor.png" alt="Block Editor Screenshot" />
 </p>
 
 <p align="center">
